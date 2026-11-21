@@ -8,13 +8,13 @@ def atk(b,r,c,w):
  for dr,dc in[(1,-1),(1,1)] if w else [(-1,-1),(-1,1)]:
   nr,nc=r+dr,c+dc
   if 8>nr>=0<=nc<8 and b[nr][nc]=='pP'[w]:return 1
- for dr,dc inD['N']:
+ for dr,dc in D['N']:
   nr,nc=r+dr,c+dc
   if 8>nr>=0<=nc<8 and b[nr][nc]=='nN'[w]:return 1
- for dr,dc inD['K']:
+ for dr,dc in D['K']:
   nr,nc=r+dr,c+dc
   if 8>nr>=0<=nc<8 and b[nr][nc]=='kK'[w]:return 1
- for dr,dc inD['B']:
+ for dr,dc in D['B']:
   nr,nc=r+dr,c+dc
   while 8>nr>=0<=nc<8:
    p=b[nr][nc]
@@ -22,7 +22,7 @@ def atk(b,r,c,w):
     if p in('bq','BQ')[w]:return 1
     break
    nr+=dr;nc+=dc
- for dr,dc inD['R']:
+ for dr,dc in D['R']:
   nr,nc=r+dr,c+dc
   while 8>nr>=0<=nc<8:
    p=b[nr][nc]
@@ -47,7 +47,7 @@ def gen(b,w):
       for q in ('qrbn','QRBN')[w] if r+d==pr else ['.']:ms+=[(r,c,r+d,c+dc,q)]
    else:
     sl=p in 'BRQbrq'
-    for dr,dc inD[p]:
+    for dr,dc in D[p]:
      nr,nc=r+dr,c+dc
      while 8>nr>=0<=nc<8:
       t=b[nr][nc]
