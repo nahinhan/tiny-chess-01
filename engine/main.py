@@ -1,117 +1,144 @@
-R=range(8)
 import sys
-V={'P':100,'N':320,'B':330,'R':500,'Q':900,'K':20000,'p':-100,'n':-320,'b':-330,'r':-500,'q':-900,'k':-20000,'.':0}
-D={'P':[(-1,-1),(-1,1)],'p':[(1,-1),(1,1)],'N':[(-2,-1),(-2,1),(-1,-2),(-1,2),(1,-2),(1,2),(2,-1),(2,1)],'B':[(-1,-1),(-1,1),(1,-1),(1,1)],'R':[(-1,0),(1,0),(0,-1),(0,1)],'Q':[(-1,-1),(-1,1),(1,-1),(1,1),(-1,0),(1,0),(0,-1),(0,1)],'K':[(-1,-1),(-1,1),(1,-1),(1,1),(-1,0),(1,0),(0,-1),(0,1)]}
-D['n'],D['b'],D['r'],D['q'],D['k']=D['N'],D['B'],D['R'],D['Q'],D['K']
-def init():return [list(r)for r in['rnbqkbnr','pppppppp']+['.'*8]*4+['PPPPPPPP','RNBQKBNR']],1
-def atk(b,r,c,w):
- for dr,dc in[(1,-1),(1,1)] if w else [(-1,-1),(-1,1)]:
-  nr,nc=r+dr,c+dc
-  if 8>nr>=0<=nc<8 and b[nr][nc]=='pP'[w]:return 1
- for dr,dc in D['N']:
-  nr,nc=r+dr,c+dc
-  if 8>nr>=0<=nc<8 and b[nr][nc]=='nN'[w]:return 1
- for dr,dc in D['K']:
-  nr,nc=r+dr,c+dc
-  if 8>nr>=0<=nc<8 and b[nr][nc]=='kK'[w]:return 1
- for dr,dc in D['B']:
-  nr,nc=r+dr,c+dc
-  while 8>nr>=0<=nc<8:
-   p=b[nr][nc]
-   if p!=".":
-    if p in('bq','BQ')[w]:return 1
-    break
-   nr+=dr;nc+=dc
- for dr,dc in D['R']:
-  nr,nc=r+dr,c+dc
-  while 8>nr>=0<=nc<8:
-   p=b[nr][nc]
-   if p!=".":
-    if p in('rq','RQ')[w]:return 1
-    break
-   nr+=dr;nc+=dc
- return 0
-def gen(b,w):
- ms=[]
- for r in R:
-  for c in R:
-   p=b[r][c]
-   if p=='.' or p.isupper()!=(w>0):continue
-   if p in 'Pp':
-    d=-1 if w else 1;st=6 if w else 1;pr=0 if w else 7
-    if 8>r+d>=0 and b[r+d][c]=='.':
-     for q in ('qrbn','QRBN')[w] if r+d==pr else ['.']:ms+=[(r,c,r+d,c,q)]
-     if r==st and b[r+2*d][c]=='.':ms+=[(r,c,r+2*d,c,'.')]
-    for dc in (-1,1):
-     if 8>r+d>=0 and 0<=c+dc<8 and b[r+d][c+dc]!='.' and b[r+d][c+dc].isupper()!=(w>0):
-      for q in ('qrbn','QRBN')[w] if r+d==pr else ['.']:ms+=[(r,c,r+d,c+dc,q)]
-   else:
-    sl=p in 'BRQbrq'
-    for dr,dc in D[p]:
-     nr,nc=r+dr,c+dc
-     while 8>nr>=0<=nc<8:
-      t=b[nr][nc]
-      if t=='.':ms+=[(r,c,nr,nc,'.')]
-      else:
-       if t.isupper()!=(w>0):ms+=[(r,c,nr,nc,'.')]
-       break
-      if not sl:break
-      nr+=dr;nc+=dc
- return ms
-def mk(b,m):
- nb=[r[:] for r in b];r1,c1,r2,c2,q=m;p=nb[r1][c1];nb[r1][c1]='.';nb[r2][c2]=p if q=='.' else q
- if p=='K' and r1==7 and c1==4 and c2==6:nb[7][5],nb[7][7]='R','.'
- if p=='K' and r1==7 and c1==4 and c2==2:nb[7][3],nb[7][0]='R','.'
- if p=='k' and r1==0 and c1==4 and c2==6:nb[0][5],nb[0][7]='r','.'
- if p=='k' and r1==0 and c1==4 and c2==2:nb[0][3],nb[0][0]='r','.'
- return nb
-def ik(b,w):
- k='kK'[w]
- for r in R:
-  for c in R:
-   if b[r][c]==k:return atk(b,r,c,1-w)
- return 1
-def ev(b):
- s=0
- for r in R:
-  for c in R:
-   p=b[r][c]
-   if p!=".":s+=V[p]+(4-abs(3.5-c))*(5 if p.isupper() else -5)
- return int(s)
-def ab(b,d,a,bt,w):
- if d==0:return ev(b)*(w*2-1),None
- ms=gen(b,w);ms.sort(key=lambda m:b[m[2]][m[3]]!='.',reverse=1);bm=None;leg=0
- for m in ms:
-  nb=mk(b,m)
-  if ik(nb,w):continue
-  leg+=1;sc=-ab(nb,d-1,-bt,-a,1-w)[0]
-  if sc>a:
-   a=sc;bm=m
-   if a>=bt:break
- if not leg:return (-19000-d if ik(b,w) else 0),None
- return a,bm
-def um(m):return f'{chr(97+m[1])}{8-m[0]}{chr(97+m[3])}{8-m[2]}{m[4].lower() if m[4]!="." else ""}'
-def pf(f):
- ps=f.split();b=[]
- for r in ps[0].split('/'):
-  row=[]
-  for ch in r:row+=['.']*int(ch) if ch.isdigit() else [ch]
-  b+=[row]
- return b,+(ps[1]=='w')
-b,w=init()
-for ln in sys.stdin:
- ln=ln.strip()
- if ln=='uci':print('id name T\nid author n\nuciok',flush=1)
- elif'i'==ln[0]:print('readyok',flush=1)
- elif'u'==ln[0]:b,w=init()
- elif'p'==ln[0]:
-  ps=ln.split();b,w=init()if ps[1]=='startpos'else pf(' '.join(ps[2:8] ));idx=2+6*(ps[1]!='startpos')
-  if len(ps)>idx and ps[idx]=='moves':
-   for mv in ps[idx+1:]:b=mk(b,(8-int(mv[1]),ord(mv[0])-97,8-int(mv[3]),ord(mv[2])-97,(mv[4].lower(),mv[4].upper())[w] if len(mv)>4 else '.'));w=1-w
- elif'g'==ln[0]:
-  _,bm=ab(b,3 if 'movetime' in ln else 2,-99999,99999,w)
-  if not bm:
-   for m in gen(b,w):
-    if not ik(mk(b,m),w):bm=m;break
-  print('bestmove '+(um(bm) if bm else '0000'),flush=1)
- elif'q'==ln[0]:break
+import time
+B=range
+E=print
+H=chr
+I=ord
+J=True
+K=copy
+L=False
+M=min
+N=max
+O=abs
+P=int
+class Q:
+ def __init__(self):
+  self.reset()
+ def reset(self):
+  self.b=[[ch for ch in row]for row in['rnbqkbnr',8*'p']+4*[8*'.']+[8*'P','RNBQKBNR']];self.t='w'
+  self.c={'K':J,'Q':J,'k':J,'q':J};self.e=None;self.h=0;self.f=1
+ def S(self,x,y):return self.b[y][x]
+ def U(self,m):
+  x1,y1=I(m[0])-97,8-P(m[1]);x2,y2=I(m[2])-97,8-P(m[3])
+  p=self.b[y1][x1];F=J
+  if p.lower()=='k'and O(x1-x2)==2:
+   if x2>x1:self.b[y1][5],self.b[y1][7]=self.b[y1][7],'.'
+   else:self.b[y1][3],self.b[y1][0]=self.b[y1][0],'.'
+  if p.lower()=='p'and x1!=x2 and self.b[y2][x2]=='.':self.b[y1][x2]='.'
+  if len(m)==5:p=m[4].upper()if self.t=='w'else m[4].lower()
+  self.b[y2][x2]=p;self.b[y1][x1]='.'
+  if p=='K' or p=='k':F=L
+  elif p.lower()=='r':
+   if p=='R'and y1==7:
+    if x1==0:F=self.c['Q']=L
+    elif x1==7:F=self.c['K']=L
+   elif p=='r'and y1==0:
+    if x1==0:F=self.c['q']=L
+    elif x1==7:F=self.c['k']=L
+  self.e=None
+  if p.lower()=='p'and O(y1-y2)==2:self.e=(x1,(y1+y2)//2)
+  if p.lower()=='p'or self.b[y2][x2]!='.':self.h=0
+  else:self.h+=1
+  if self.t=='b':self.f+=1
+  self.t='b'if self.t=='w'else'w'
+ def generate_moves(self):
+  m=[]
+  for y in B(8):
+   for x in B(8):
+    p=self.b[y][x]
+    if p=='.'or(p.isupper()and self.t=='b')or(p.islower()and self.t=='w'):continue
+    d=-1 if p.isupper()else 1
+    if p.lower()=='p':
+     s=P(d<0)
+     if y+d in B(8)and self.b[y+d][x]=='.':
+      m+=[f"{H(x+97)}{8-y}{H(x+97)}{8-(y+d)}"]
+      if y==(6if s else 1)and self.b[y+2*d][x]=='.':m+=[f"{H(x+97)}{8-y}{H(x+97)}{8-(y+2*d)}"]
+     for dx in(-1,1):
+      if x+dx in B(8):
+       if self.b[y+d][x+dx]!='.'and((self.b[y+d][x+dx].isupper()and self.t=='b')or(self.b[y+d][x+dx].islower()and self.t=='w')):m+=[f"{H(x+97)}{8-y}{H(x+dx+97)}{8-(y+d)}"]
+       if self.e and(x+dx,y+d)==self.e:m+=[f"{H(x+97)}{8-y}{H(x+dx+97)}{8-(y+d)}"]
+    elif p.lower()=='n':
+     for dx,dy in((1,2),(2,1),(-1,2),(-2,1),(1,-2),(2,-1),(-1,-2),(-2,-1)):
+      nx,ny=x+dx,y+dy
+      if 0<=nx<8 and 0<=ny<8 and(self.b[ny][nx]=='.'or(self.b[ny][nx].isupper()and self.t=='b')or(self.b[ny][nx].islower()and self.t=='w')):m+=[f"{H(x+97)}{8-y}{H(nx+97)}{8-ny}"]
+    elif p.lower() in'bq':
+     for dx,dy in((1,1),(1,-1),(-1,1),(-1,-1)):
+      for e in B(1,8):
+       nx,ny=x+dx*e,y+dy*e
+       if not(0<=nx<8 and 0<=ny<8):break
+       if self.b[ny][nx]=='.':m+=[f"{H(x+97)}{8-y}{H(nx+97)}{8-ny}"]
+       else:
+        if(self.b[ny][nx].isupper()and self.t=='b')or(self.b[ny][nx].islower()and self.t=='w'):m+=[f"{H(x+97)}{8-y}{H(nx+97)}{8-ny}"]
+        break
+    elif p.lower() in'rq':
+     for dx,dy in((1,0),(0,1),(-1,0),(0,-1)):
+      for e in B(1,8):
+       nx,ny=x+dx*e,y+dy*e
+       if not(0<=nx<8 and 0<=ny<8):break
+       if self.b[ny][nx]=='.':m+=[f"{H(x+97)}{8-y}{H(nx+97)}{8-ny}"]
+       else:
+        if(self.b[ny][nx].isupper()and self.t=='b')or(self.b[ny][nx].islower()and self.t=='w'):m+=[f"{H(x+97)}{8-y}{H(nx+97)}{8-ny}"]
+        break
+    elif p.lower()=='k':
+     for dx,dy in((1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1),(0,-1),(1,-1)):
+      nx,ny=x+dx,y+dy
+      if 0<=nx<8 and 0<=ny<8 and(self.b[ny][nx]=='.'or(self.b[ny][nx].isupper()and self.t=='b')or(self.b[ny][nx].islower()and self.t=='w')):m+=[f"{H(x+97)}{8-y}{H(nx+97)}{8-ny}"]
+     if self.t=='w'and p=='K':
+      if self.c['K']and self.b[7][5]==self.b[7][6]=='.':m+=["e1g1"]
+      if self.c['Q']and self.b[7][3]==self.b[7][2]==self.b[7][1]=='.':m+=["e1c1"]
+     elif self.t=='b'and p=='k':
+      if self.c['k']and self.b[0][5]==self.b[0][6]=='.':m+=["e8g8"]
+      if self.c['q']and self.b[0][3]==self.b[0][2]==self.b[0][1]=='.':m+=["e8c8"]
+  return m
+ def evaluate(self):
+  s=p=0
+  for y in B(8):
+   for x in B(8):
+    if(self.b[y][x])=='.':continue
+    p=self.b[y][x];v=(10+(p.lower()=='n')+(p.lower()=='b')*2+(p.lower()=='r')*4+(p.lower()=='q')*8+(p.lower()=='k')*199)*10
+    v+=(2,1,1,0,1,1,0)[x]*(1+(y==1or y==6))*5+(0,5,5,0,5,5,0)[x]*(1+(y>1and y<6))
+    s+=v*(1-2*(p.islower()))
+  return s*(1-2*(self.t=='b'))
+T=lambda b,d,a,B,E:
+ if d==0:return b.evaluate()
+ m=b.generate_moves()
+ if not m:return-20000if E else 20000
+ m.sort(key=lambda x:(0 if b.S(I(x[2])-97,8-P(x[3]))!='.'else 1,-O(100*(1+2*(b.S(I(x[0])-97,8-P(x[1])).lower()=='n')+3*(_.lower()=='b')+5*(_.lower()=='r')+9*(_.lower()=='q')+200*(_.lower()=='k')))))
+ if E:
+  V=-1e9
+  for u in m:
+   c=Q();c.b=[r[:]for r in b.b];c.t=b.t;c.c=b.c.copy();c.e=b.e;c.h=b.h;c.f=b.f;c.U(u)
+   e=T(c,d-1,a,B,L);V=M(V,e);a=M(a,e)
+   if B<=a:break
+  return V
+ else:
+  V=1e9
+  for u in m:
+   c=Q();c.b=[r[:]for r in b.b];c.t=b.t;c.c=b.c.copy();c.e=b.e;c.h=b.h;c.f=b.f;c.U(u)
+   e=T(c,d-1,a,B,J);V=M(V,e);B=M(B,e)
+   if B<=a:break
+  return V
+def main():
+ b=Q()
+ while J:
+  l=sys.stdin.readline().strip()
+  if not l:continue
+  if l=='uci':E("id name TinyChess");E("id author Hermes");E("uciok")
+  elif l=='isready':E("readyok")
+  elif l.startswith('position'):
+   p=l.split()
+   if p[1]=='startpos':
+    b.reset()
+    if len(p)>2 and p[2]=='moves':
+     for u in p[3:]:b.U(u)
+  elif l.startswith('go'):
+   p=l.split();d=3
+   if'depth'in p:d=P(p[p.index('depth')+1])
+   _=None;W=-1e9
+   for u in b.generate_moves():
+    c=Q();c.b=[r[:]for r in b.b];c.t=b.t;c.c=b.c.copy();c.e=b.e;c.h=b.h;c.f=b.f;c.U(u)
+    s=-T(c,d-1,-1e9,1e9,b.t=='b')
+    if s>W:W=s;_=u
+   E(f"bestmove {_}")
+  elif l=='quit':break
+if __name__=='__main__':main()
