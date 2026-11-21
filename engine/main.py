@@ -107,7 +107,7 @@ for ln in sys.stdin:
  elif'p'==ln[0]:
   ps=ln.split();b,w=init()if ps[1]=='startpos'else pf(' '.join(ps[2:8] ));idx=2+6*(ps[1]!='startpos')
   if len(ps)>idx and ps[idx]=='moves':
-   for mv in ps[idx+1:]:b=mk(b,(8-int(mv[1]),ord(mv[0])-97,8-int(mv[3]),ord(mv[2])-97,(mv[4].lower(),mv[4].upper()][w] if len(mv)>4 else '.')];w=1-w
+   for mv in ps[idx+1:]:b=mk(b,(8-int(mv[1]),ord(mv[0])-97,8-int(mv[3]),ord(mv[2])-97,(mv[4].lower(),mv[4].upper())[w] if len(mv)>4 else '.')];w=1-w
  elif'g'==ln[0]:
   _,bm=ab(b,3 if 'movetime' in ln else 2,-99999,99999,w)
   if not bm:
